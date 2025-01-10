@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, str::FromStr};
 
 use async_trait::async_trait;
-use tokio_postgres::types::PgLsn;
+use tokio_postgres::types::{FromSql, PgLsn};
 use tracing::info;
 
 use crate::{
@@ -15,6 +15,7 @@ use super::{BatchSink, InfallibleSinkError};
 pub type Callback = Box<dyn Fn() + Send + Sync>;
 
 pub struct NotificationSink {
+    pub lsn: String,
     pub callback: Callback,
 }
 
@@ -24,7 +25,7 @@ impl BatchSink for NotificationSink {
     async fn get_resumption_state(&mut self) -> Result<PipelineResumptionState, Self::Error> {
         Ok(PipelineResumptionState {
             copied_tables: HashSet::new(),
-            last_lsn: PgLsn::from(u64::MAX - 2),
+            last_lsn: PgLsn::from_str(self.lsn.as_str()),
         })
     }
 
