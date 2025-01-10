@@ -47,7 +47,7 @@ impl BatchSink for NotificationSink {
         for event in events {
             match event {
                 CdcEvent::Insert(_) | CdcEvent::Update(_) | CdcEvent::Delete(_) => {
-                    self.callback();
+                    (self.callback)();
                 }
                 _ => (),
             }
