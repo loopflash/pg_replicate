@@ -20,6 +20,7 @@ pub mod duckdb;
 #[cfg(feature = "stdout")]
 pub mod stdout;
 
+pub mod notification;
 pub trait SinkError: std::error::Error + Send + Sync + 'static {}
 
 #[derive(Debug, Error)]
