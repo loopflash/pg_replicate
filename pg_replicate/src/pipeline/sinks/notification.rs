@@ -24,7 +24,7 @@ impl BatchSink for NotificationSink {
     async fn get_resumption_state(&mut self) -> Result<PipelineResumptionState, Self::Error> {
         Ok(PipelineResumptionState {
             copied_tables: HashSet::new(),
-            last_lsn: PgLsn::from(0),
+            last_lsn: PgLsn::from(u64::MAX),
         })
     }
 
