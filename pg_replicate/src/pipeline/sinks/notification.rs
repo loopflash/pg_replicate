@@ -15,7 +15,7 @@ use super::{BatchSink, InfallibleSinkError};
 pub type Callback = Box<dyn Fn() + Send + Sync>;
 
 pub struct NotificationSink {
-    pub lsn: String,
+    pub lsn: u64,
     pub callback: Callback,
 }
 
@@ -25,7 +25,7 @@ impl BatchSink for NotificationSink {
     async fn get_resumption_state(&mut self) -> Result<PipelineResumptionState, Self::Error> {
         Ok(PipelineResumptionState {
             copied_tables: HashSet::new(),
-            last_lsn: PgLsn::from_str(self.lsn.as_str()).unwrap(),
+            last_lsn: PgLsn::from(self.lsn),
         })
     }
 
