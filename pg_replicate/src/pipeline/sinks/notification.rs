@@ -12,10 +12,10 @@ use crate::{
 
 use super::{BatchSink, InfallibleSinkError};
 
-type Callback = Box<dyn Fn() + Send + Sync>;
+pub type Callback = Box<dyn Fn() + Send + Sync>;
 
 pub struct NotificationSink {
-    callback: Callback,
+    pub callback: Callback,
 }
 
 #[async_trait]
