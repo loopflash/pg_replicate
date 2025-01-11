@@ -13,7 +13,7 @@ use crate::{
 
 use super::{BatchSink, InfallibleSinkError};
 
-type Callback = Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send + Sync + 'static>>>;
+type Callback = Box<dyn Fn() -> BoxFuture<'static, ()>>;
 
 pub struct NotificationSink {
     pub lsn: u64,
