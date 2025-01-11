@@ -1,6 +1,7 @@
-use std::{collections::{HashMap, HashSet}, str::FromStr};
+use std::{collections::{HashMap, HashSet}, future::Future, str::FromStr};
 
 use async_trait::async_trait;
+use futures::future::BoxFuture;
 use tokio_postgres::types::{FromSql, PgLsn};
 use tracing::info;
 
@@ -12,7 +13,7 @@ use crate::{
 
 use super::{BatchSink, InfallibleSinkError};
 
-pub type Callback = Box<dyn Fn() + Send + Sync>;
+type Callback = Box<dyn Fn() -> BoxFuture<'static, ()> + Send + Sync>;
 
 pub struct NotificationSink {
     pub lsn: u64,
@@ -48,7 +49,8 @@ impl BatchSink for NotificationSink {
         for event in events {
             match event {
                 CdcEvent::Insert(_) | CdcEvent::Update(_) | CdcEvent::Delete(_) => {
-                    (self.callback)();
+                    (self.callback)().await;
+                    break;
                 }
                 _ => (),
             }
