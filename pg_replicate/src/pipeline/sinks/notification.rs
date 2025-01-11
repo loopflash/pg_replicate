@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, future::Future, str::FromStr};
+use std::{collections::{HashMap, HashSet}, future::Future, pin::Pin, str::FromStr};
 
 use async_trait::async_trait;
 use futures::future::BoxFuture;
@@ -13,7 +13,7 @@ use crate::{
 
 use super::{BatchSink, InfallibleSinkError};
 
-type Callback = Box<dyn Fn() -> BoxFuture<'static, ()> + Sync>;
+type Callback = Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + 'static>>>;
 
 pub struct NotificationSink {
     pub lsn: u64,
@@ -49,7 +49,8 @@ impl BatchSink for NotificationSink {
         for event in events {
             match event {
                 CdcEvent::Insert(_) | CdcEvent::Update(_) | CdcEvent::Delete(_) => {
-                    (self.callback)().await;
+                    let v = (self.callback)();
+                    v.await;
                     break;
                 }
                 _ => (),
