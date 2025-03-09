@@ -62,11 +62,6 @@ async fn main_impl() -> Result<(), Box<dyn Error>> {
     } = settings.source;
 
     let postgres_source = PostgresSource::new(
-        &host,
-        port,
-        &name,
-        &username,
-        password,
         Some(slot_name),
         TableNamesFrom::Publication(publication),
     )

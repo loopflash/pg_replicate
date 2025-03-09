@@ -3,24 +3,6 @@ name = "pg_replicate"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[example]]
-name = "bigquery"
-required-features = ["bigquery"]
-
-[[example]]
-name = "duckdb"
-required-features = ["duckdb"]
-
-[[example]]
-name = "stdout"
-required-features = ["stdout"]
-
-[[example]]
-name = "delta"
-required-features = ["delta"]
-
 [dependencies]
 async-trait = { workspace = true }
 bigdecimal = { workspace = true, features = ["std"] }
