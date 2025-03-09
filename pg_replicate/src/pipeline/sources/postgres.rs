@@ -52,16 +52,14 @@ pub struct PostgresSource {
 
 impl PostgresSource {
     pub async fn new(
-        host: &str,
-        port: u16,
-        database: &str,
-        username: &str,
-        password: Option<String>,
         slot_name: Option<String>,
         table_names_from: TableNamesFrom,
     ) -> Result<PostgresSource, PostgresSourceError> {
-        let mut replication_client =
-            ReplicationClient::connect_no_tls(host, port, database, username, password).await?;
+        let mut replication_client = if std::env::var("POSTGRES_CERT").is_ok() {
+            ReplicationClient::connect_tls().await?
+        }else{
+            ReplicationClient::connect_no_tls().await?
+        };
         replication_client.begin_readonly_transaction().await?;
         if let Some(ref slot_name) = slot_name {
             replication_client.get_or_create_slot(slot_name).await?;

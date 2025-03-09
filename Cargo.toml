@@ -49,7 +49,8 @@ utoipa = { version = "4.2.3", default-features = false }
 utoipa-swagger-ui = { version = "7.1.0", default-features = false }
 uuid = { version = "1.10.0", default-features = false }
 deltalake = {version="0.22.0",default-features = false}
+native-tls = "0.2.14"
+postgres-native-tls = "0.5.1"
 
-
-# [patch."https://github.com/imor/gcp-bigquery-client"]
-# gcp-bigquery-client = { path = "../gcp-bigquery-client" }
+[patch.crates-io]
+tokio-postgres = { version = "=0.7.11", git = "https://github.com/imor/rust-postgres", default-features = false, rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }
