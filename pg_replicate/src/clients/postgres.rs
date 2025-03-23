@@ -64,7 +64,7 @@ impl ReplicationClient {
         pg_config.host(std::env::var("POSTGRES_HOST").unwrap().as_str());
         pg_config.port(
             std::env::var("POSTGRES_PORT")
-                .unwrap()
+                .unwrap_or("5432".to_string())
                 .as_str()
                 .parse()
                 .unwrap(),
