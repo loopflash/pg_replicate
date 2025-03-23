@@ -32,8 +32,8 @@ tracing = { workspace = true, default-features = true }
 uuid = { workspace = true, features = ["v4"] }
 native-tls = { workspace = true }
 postgres-native-tls = { workspace = true }
-deadpool = { workspace = true }
-deadpool-postgres = { workspace = true }
+azure_identity = "0.22.0"
+azure_core = { version = "0.22.0", features = ["tokio"] }
 
 [dev-dependencies]
 clap = { workspace = true, default-features = true, features = [

@@ -1,7 +1,5 @@
 use std::{collections::HashMap, str::FromStr};
 
-use deadpool::managed::Object;
-use deadpool_postgres::Manager;
 use native_tls::{Certificate, TlsConnector};
 use pg_escape::{quote_identifier, quote_literal};
 use postgres_native_tls::MakeTlsConnector;
@@ -22,17 +20,14 @@ pub struct SlotInfo {
 
 /// A client for Postgres logical replication
 pub struct ReplicationClient {
-    postgres_client: &'static Object<Manager>,
+    postgres_client: PostgresClient,
     in_txn: bool,
 }
 
 #[derive(Debug, Error)]
 pub enum ReplicationClientError {
-    // #[error("tokio_postgres error: {0}")]
-    // TokioPostgresError(#[from] tokio_postgres::Error),
-
-    #[error("deadpool error: {0}")]
-    DeadpoolError(#[from] deadpool_postgres::tokio_postgres::Error),
+    #[error("tokio_postgres error: {0}")]
+    TokioPostgresError(#[from] tokio_postgres::Error),
 
     #[error("column {0} is missing from table {1}")]
     MissingColumn(String, String),
@@ -63,12 +58,64 @@ pub enum ReplicationClientError {
 }
 
 impl ReplicationClient {
-    pub async fn connect_tls(
-        conn: &'static Object<Manager>,
-    ) -> Result<ReplicationClient, ReplicationClientError> {
+    pub async fn connect_tls() -> Result<ReplicationClient, ReplicationClientError> {
         info!("connecting to postgres");
+        let mut pg_config = tokio_postgres::Config::new();
+        pg_config.host(std::env::var("POSTGRES_HOST").unwrap().as_str());
+        pg_config.port(
+            std::env::var("POSTGRES_PORT")
+                .unwrap()
+                .as_str()
+                .parse()
+                .unwrap(),
+        );
+        pg_config.user(std::env::var("POSTGRES_USERNAME").unwrap().as_str());
+        pg_config.dbname(std::env::var("POSTGRES_DATABASE").unwrap().as_str());
+        pg_config.replication_mode(ReplicationMode::Logical);
+        
+        let mode_password = std::env::var("POSTGRES_PASSWORD_MODE").unwrap_or("static".to_string());
+        match mode_password.as_str() {
+            "static" => {
+                pg_config.password(std::env::var("POSTGRES_PASSWORD").unwrap().as_str());
+            }
+            "azure-dynamic" => {
+                use azure_core::credentials::TokenCredential;
+                use azure_identity::DefaultAzureCredential;
+                let credential = DefaultAzureCredential::new().unwrap();
+                let token = credential
+                    .get_token(&["https://ossrdbms-aad.database.windows.net"])
+                    .await
+                    .unwrap();
+                pg_config.password(token.token.secret());
+            }
+            _ => {}
+        };
+
+        let enable_tls = std::env::var("POSTGRES_OWN_CERT")
+            .unwrap_or("false".to_string())
+            .parse::<bool>()
+            .unwrap();
+
+        let mut connector = TlsConnector::builder();
+        if enable_tls {
+            let cert = std::fs::read("/etc/loopflash/certs/db.crt").unwrap();
+            let cert = Certificate::from_pem(&cert).unwrap();
+            connector.add_root_certificate(cert);
+        }
+        let connector = connector.build().unwrap();
+        let connector = MakeTlsConnector::new(connector);
+
+        let (postgres_client, connection) = pg_config.connect(connector).await.unwrap();
+        
+        tokio::spawn(async move {
+            info!("waiting for connection to terminate");
+            if let Err(e) = connection.await {
+                warn!("connection error: {}", e);
+            }
+        });
+        
         Ok(ReplicationClient {
-            postgres_client: &conn,
+            postgres_client,
             in_txn: false,
         })
     }

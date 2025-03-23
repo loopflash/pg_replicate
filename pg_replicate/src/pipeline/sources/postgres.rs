@@ -6,8 +6,6 @@ use std::{
 };
 
 use async_trait::async_trait;
-use deadpool::managed::Object;
-use deadpool_postgres::Manager;
 use futures::{ready, Stream};
 use pin_project_lite::pin_project;
 use postgres_replication::LogicalReplicationStream;
@@ -54,11 +52,10 @@ pub struct PostgresSource {
 
 impl PostgresSource {
     pub async fn new(
-        conn: &'static Object<Manager>,
         slot_name: Option<String>,
         table_names_from: TableNamesFrom,
     ) -> Result<PostgresSource, PostgresSourceError> {
-        let mut replication_client = ReplicationClient::connect_tls(&conn).await?;
+        let mut replication_client = ReplicationClient::connect_tls().await?;
         replication_client.begin_readonly_transaction().await?;
         if let Some(ref slot_name) = slot_name {
             replication_client.get_or_create_slot(slot_name).await?;

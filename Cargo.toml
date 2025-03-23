@@ -60,8 +60,7 @@ uuid = { version = "1.10.0", default-features = false }
 deltalake = {version="0.22.0",default-features = false}
 native-tls = "0.2.14"
 postgres-native-tls = { version = "0.5.0", git = "https://github.com/MaterializeInc/rust-postgres", rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }
-deadpool = { version = "0.12.1", features = ["rt_tokio_1"] }
-deadpool-postgres = { version = "0.14.1", features = ["serde"] }
+
 
 [patch.crates-io]
 tokio-postgres = { version = "0.7.11", git = "https://github.com/MaterializeInc/rust-postgres", rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }
