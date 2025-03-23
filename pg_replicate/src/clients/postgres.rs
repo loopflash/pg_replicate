@@ -1,5 +1,7 @@
 use std::{collections::HashMap, str::FromStr};
 
+use deadpool::managed::Object;
+use deadpool_postgres::Manager;
 use native_tls::{Certificate, TlsConnector};
 use pg_escape::{quote_identifier, quote_literal};
 use postgres_native_tls::MakeTlsConnector;
@@ -20,14 +22,17 @@ pub struct SlotInfo {
 
 /// A client for Postgres logical replication
 pub struct ReplicationClient {
-    postgres_client: PostgresClient,
+    postgres_client: &'static Object<Manager>,
     in_txn: bool,
 }
 
 #[derive(Debug, Error)]
 pub enum ReplicationClientError {
-    #[error("tokio_postgres error: {0}")]
-    TokioPostgresError(#[from] tokio_postgres::Error),
+    // #[error("tokio_postgres error: {0}")]
+    // TokioPostgresError(#[from] tokio_postgres::Error),
+
+    #[error("deadpool error: {0}")]
+    DeadpoolError(#[from] deadpool_postgres::tokio_postgres::Error),
 
     #[error("column {0} is missing from table {1}")]
     MissingColumn(String, String),
@@ -58,60 +63,12 @@ pub enum ReplicationClientError {
 }
 
 impl ReplicationClient {
-    /// Connect to a postgres database in logical replication mode without TLS
-    pub async fn connect_no_tls() -> Result<ReplicationClient, ReplicationClientError> {
-        let mut config =
-            tokio_postgres::Config::from_str(std::env::var("POSTGRES_URI").unwrap().as_str())
-                .unwrap();
-        config.replication_mode(ReplicationMode::Logical);
-
-        let (postgres_client, connection) = config.connect(NoTls).await?;
-
-        tokio::spawn(async move {
-            info!("waiting for connection to terminate");
-            if let Err(e) = connection.await {
-                warn!("connection error: {}", e);
-            }
-        });
-
-        info!("successfully connected to postgres");
-
-        Ok(ReplicationClient {
-            postgres_client,
-            in_txn: false,
-        })
-    }
-
-    pub async fn connect_tls() -> Result<ReplicationClient, ReplicationClientError> {
+    pub async fn connect_tls(
+        conn: &'static Object<Manager>,
+    ) -> Result<ReplicationClient, ReplicationClientError> {
         info!("connecting to postgres");
-        let mut config =
-            tokio_postgres::Config::from_str(std::env::var("POSTGRES_URI").unwrap().as_str())
-                .unwrap();
-        config.replication_mode(ReplicationMode::Logical);
-
-        let (postgres_client, connection) = async {
-            let mut connector = TlsConnector::builder();
-            let file_content = std::env::var("POSTGRES_CERT").unwrap();
-            let cert = std::fs::read(file_content).unwrap();
-            let cert = Certificate::from_pem(&cert).unwrap();
-            connector.add_root_certificate(cert);
-            let connector = connector.build().unwrap();
-            let connector = MakeTlsConnector::new(connector);
-            config.connect(connector).await.unwrap()
-        }
-        .await;
-
-        tokio::spawn(async move {
-            info!("waiting for connection to terminate");
-            if let Err(e) = connection.await {
-                warn!("connection error: {}", e);
-            }
-        });
-
-        info!("successfully connected to postgres");
-
         Ok(ReplicationClient {
-            postgres_client,
+            postgres_client: &conn,
             in_txn: false,
         })
     }
@@ -151,7 +108,6 @@ impl ReplicationClient {
             r#"COPY {} TO STDOUT WITH (FORMAT text);"#,
             table_name.as_quoted_identifier()
         );
-
         let stream = self.postgres_client.copy_out_simple(&copy_query).await?;
 
         Ok(stream)

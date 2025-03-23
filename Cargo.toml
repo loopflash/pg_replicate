@@ -39,7 +39,16 @@ serde_json = { version = "1.0", default-features = false }
 sqlx = { version = "0.8.2", default-features = false }
 thiserror = "1.0"
 tokio = { version = "1.38", default-features = false }
-tokio-postgres = { git = "https://github.com/MaterializeInc/rust-postgres", default-features = false, rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }
+postgres-types = { version = "0.2.7", git = "https://github.com/MaterializeInc/rust-postgres", rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b", features = [
+    "array-impls",
+    "derive",
+] }
+tokio-postgres = { version = "0.7.11", git = "https://github.com/MaterializeInc/rust-postgres", default-features = true, rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b", features = [
+    "with-serde_json-1",
+    "with-chrono-0_4",
+    "with-uuid-1",
+    "array-impls",
+] }
 tracing = { version = "0.1", default-features = false }
 tracing-actix-web = { version = "0.7", default-features = false }
 tracing-bunyan-formatter = { version = "0.3", default-features = false }
@@ -51,3 +60,9 @@ uuid = { version = "1.10.0", default-features = false }
 deltalake = {version="0.22.0",default-features = false}
 native-tls = "0.2.14"
 postgres-native-tls = { version = "0.5.0", git = "https://github.com/MaterializeInc/rust-postgres", rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }
+deadpool = { version = "0.12.1", features = ["rt_tokio_1"] }
+deadpool-postgres = { version = "0.14.1", features = ["serde"] }
+
+[patch.crates-io]
+tokio-postgres = { version = "0.7.11", git = "https://github.com/MaterializeInc/rust-postgres", rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }
+postgres-types = { version = "0.2.7", git = "https://github.com/MaterializeInc/rust-postgres", rev = "20265ef38e32a06f76b6f9b678e2077fc2211f6b" }

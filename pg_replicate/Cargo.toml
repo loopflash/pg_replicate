@@ -26,16 +26,14 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
-tokio-postgres = { workspace = true, features = [
-    "runtime",
-    "with-chrono-0_4",
-    "with-uuid-1",
-    "with-serde_json-1",
-] }
+postgres-types = { workspace = true }
+tokio-postgres = { workspace = true }
 tracing = { workspace = true, default-features = true }
 uuid = { workspace = true, features = ["v4"] }
 native-tls = { workspace = true }
 postgres-native-tls = { workspace = true }
+deadpool = { workspace = true }
+deadpool-postgres = { workspace = true }
 
 [dev-dependencies]
 clap = { workspace = true, default-features = true, features = [
